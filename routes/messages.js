@@ -39,7 +39,7 @@ router.get("/:id",async (req,res,next)=>{
  **/
 router.post("/",ensureLoggedIn,async (req,res,next)=>{
     try{
-        const message = Message.create(req.body)
+        const message = await Message.create(req.body)
         return req.json({message})
     }catch(e){
         return next(e)
@@ -58,9 +58,9 @@ router.post("/",ensureLoggedIn,async (req,res,next)=>{
  **/
 router.post("/:id/read",ensureCorrectUser,async (req,res,next)=>{
     try{
-        const theMsg = Message.get(req.params.id)
+        const theMsg = await Message.get(req.params.id)
         if(req.user.username === theMsg.to_user.username){
-            const message = Message.markRead(req.params.id)
+            const message =await Message.markRead(req.params.id)
             return res.json({message})
         }else{
             throw new ExpressError("Unauthorized user",404)
