@@ -2,7 +2,7 @@
 const db = require("../db")
 const bcrypt = require("bcrypt")
 const ExpressError = require("../expressError");
-const { response } = require("express");
+const {BCRYPT_WORK_FACTOR} = require("../config")
 
 
 
@@ -16,11 +16,12 @@ class User {
 
   static async register({username, password, first_name, last_name, phone}) { 
         const currentDate = new Date();
+        const hashPass = await bcrypt.hash(password,BCRYPT_WORK_FACTOR)
         const response = await db.query(
           `INSERT INTO users (username,password,first_name,last_name,phone,join_at,last_login_at)
           VALUES
           ($1,$2,$3,$4,$5,$6,$7) RETURNING username,password,first_name,last_name,phone`,
-          [username,password,first_name,last_name,phone,currentDate,currentDate]
+          [username,hashPass,first_name,last_name,phone,currentDate,currentDate]
         );
         return response.rows[0];
   }
@@ -33,8 +34,13 @@ class User {
         );
         const currentUser = response.rows[0];
         if(!currentUser) throw new ExpressError("Username not found",404);
-        if (password === currentUser.password) return true;
-        return false;
+        
+        const auth = await bcrypt.compare(password,currentUser.password)
+        if(auth){
+          return true;
+        }else{
+          return false;
+        }
   }
 
   /** Update last_login_at for user */
